@@ -11,17 +11,25 @@ export const NewTask = () => {
   const [lists, setLists] = useState([]);
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
+  const [limit, setLimit] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [cookies] = useCookies();
-  const history = useNavigate();
+  const navigate = useNavigate();
   const handleTitleChange = (e) => setTitle(e.target.value);
   const handleDetailChange = (e) => setDetail(e.target.value);
   const handleSelectList = (id) => setSelectListId(id);
+  const handleLimitChange = (e) => setLimit(new Date(e.target.value));
   const onCreateTask = () => {
+    const localDate = new Date(limit - limit.getTimezoneOffset() * 60000);
+    localDate.setSeconds(null);
+    localDate.setMilliseconds(null);
+    localDate.toISOString().slice(0, -1);
+    console.log(localDate);
     const data = {
       title: title,
       detail: detail,
       done: false,
+      limit: localDate,
     };
 
     axios
@@ -31,7 +39,7 @@ export const NewTask = () => {
         },
       })
       .then(() => {
-        history.push("/");
+        navigate("/");
       })
       .catch((err) => {
         setErrorMessage(`タスクの作成に失敗しました。${err}`);
@@ -88,6 +96,15 @@ export const NewTask = () => {
             type="text"
             onChange={handleDetailChange}
             className="new-task-detail"
+          />
+          <br />
+          <label>期限</label>
+          <br />
+          <input 
+            type="datetime-local"
+            id="limit"
+            onChange={handleLimitChange}
+            className="edit-task-limit"
           />
           <br />
           <button

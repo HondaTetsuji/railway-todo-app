@@ -7,13 +7,25 @@ import { url } from "../const";
 import "./home.css";
 
 export const Home = () => {
+  const [today, setToday] = useState(new Date());
   const [isDoneDisplay, setIsDoneDisplay] = useState("todo"); // todo->未完了 done->完了
   const [lists, setLists] = useState([]);
   const [selectListId, setSelectListId] = useState();
   const [tasks, setTasks] = useState([]);
+  const [limit, setLimit] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [cookies] = useCookies();
   const handleIsDoneDisplayChange = (e) => setIsDoneDisplay(e.target.value);
+
+  const addRemain = (data) => {
+    return data.tasks.map((task) => (
+      {
+        ...task,
+        remain: Math.floor((new Date(task.limit) - today - 9*60*60*1000) / 1000/60/60/24) + "日" + Math.floor((new Date(task.limit) - today - 9*60*60*1000) / 1000/60/60%24) + "時間"
+      }
+    ));
+  }
+
   useEffect(() => {
     axios
       .get(`${url}/lists`, {
@@ -40,7 +52,8 @@ export const Home = () => {
           },
         })
         .then((res) => {
-          setTasks(res.data.tasks);
+          const list = addRemain(res.data);
+          setTasks(list);
         })
         .catch((err) => {
           setErrorMessage(`タスクの取得に失敗しました。${err}`);
@@ -57,7 +70,8 @@ export const Home = () => {
         },
       })
       .then((res) => {
-        setTasks(res.data.tasks);
+        const list = addRemain(res.data);
+        setTasks(list);
       })
       .catch((err) => {
         setErrorMessage(`タスクの取得に失敗しました。${err}`);
@@ -164,7 +178,9 @@ const Tasks = (props) => {
             >
               {task.title}
               <br />
-              {task.done ? "完了" : "未完了"}
+              {task.done ? "完了" : "未完了"}　
+              期限：{task.limit}　
+              残り：{task.remain}
             </Link>
           </li>
         ))}

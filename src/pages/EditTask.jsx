@@ -7,22 +7,30 @@ import { useNavigate, useParams } from "react-router-dom";
 import "./editTask.css";
 
 export const EditTask = () => {
-  const history = useNavigate();
+  const navigate = useNavigate();
   const { listId, taskId } = useParams();
   const [cookies] = useCookies();
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [isDone, setIsDone] = useState();
+  const [limit, setLimit] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const handleTitleChange = (e) => setTitle(e.target.value);
   const handleDetailChange = (e) => setDetail(e.target.value);
   const handleIsDoneChange = (e) => setIsDone(e.target.value === "done");
+  const handleLimitChange = (e) => setLimit(new Date(e.target.value));
   const onUpdateTask = () => {
+    const localDate = new Date(limit - limit.getTimezoneOffset() * 60000);
+    localDate.setSeconds(null);
+    localDate.setMilliseconds(null);
+    localDate.toISOString().slice(0, -1);
+    console.log(localDate);
     console.log(isDone);
     const data = {
       title: title,
       detail: detail,
       done: isDone,
+      limit: localDate,
     };
 
     axios
@@ -33,7 +41,7 @@ export const EditTask = () => {
       })
       .then((res) => {
         console.log(res.data);
-        history.push("/");
+        navigate("/");
       })
       .catch((err) => {
         setErrorMessage(`更新に失敗しました。${err}`);
@@ -48,7 +56,7 @@ export const EditTask = () => {
         },
       })
       .then(() => {
-        history.push("/");
+        navigate("/");
       })
       .catch((err) => {
         setErrorMessage(`削除に失敗しました。${err}`);
@@ -67,6 +75,8 @@ export const EditTask = () => {
         setTitle(task.title);
         setDetail(task.detail);
         setIsDone(task.done);
+        setLimit(task.limit);
+        console.log(task.limit);
       })
       .catch((err) => {
         setErrorMessage(`タスク情報の取得に失敗しました。${err}`);
@@ -84,6 +94,7 @@ export const EditTask = () => {
           <br />
           <input
             type="text"
+            id="title"
             onChange={handleTitleChange}
             className="edit-task-title"
             value={title}
@@ -118,6 +129,16 @@ export const EditTask = () => {
             />
             完了
           </div>
+          <br />
+          <label>期限</label>
+          <br />
+          <input
+            type="datetime-local"
+            id="limit"
+            onChange={handleLimitChange}
+            className="edit-task-limit"
+          />
+          <br />
           <button
             type="button"
             className="delete-task-button"
