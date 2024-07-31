@@ -23,4 +23,19 @@ button {
   -webkit-appearance: none;
      -moz-appearance: none;
           appearance: none;
+}
+
+@media screen and (max-width: 768px) {
+  body {
+    background-color: #fffff8;
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: none;
+  }
+}
+@media screen and (max-width: 320px) {
+  body {
+    background-color: #fff8ff;
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: none;
+  }
 }/*# sourceMappingURL=index.css.map */

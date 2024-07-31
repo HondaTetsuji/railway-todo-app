@@ -6,24 +6,38 @@ import { Header } from "../components/Header";
 import { url } from "../const";
 import "./home.css";
 
+const Remain = (props) => {
+  const { limit } = props;
+  const remain = new Date(limit) - new Date() - 9*60*60*1000;
+  var remainDay = Math.floor(remain / 1000/60/60/24);
+  if (remainDay < 0){ remainDay = "-" + (remainDay + 1); }
+  const remainHour = Math.floor(Math.abs(remain / 1000/60/60%24));
+  return <>{remainDay}日 {remainHour}時間</>
+}
+
 export const Home = () => {
-  const [today, setToday] = useState(new Date());
   const [isDoneDisplay, setIsDoneDisplay] = useState("todo"); // todo->未完了 done->完了
   const [lists, setLists] = useState([]);
   const [selectListId, setSelectListId] = useState();
   const [tasks, setTasks] = useState([]);
-  const [limit, setLimit] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [cookies] = useCookies();
   const handleIsDoneDisplayChange = (e) => setIsDoneDisplay(e.target.value);
 
-  const addRemain = (data) => {
-    return data.tasks.map((task) => (
-      {
-        ...task,
-        remain: Math.floor((new Date(task.limit) - today - 9*60*60*1000) / 1000/60/60/24) + "日" + Math.floor((new Date(task.limit) - today - 9*60*60*1000) / 1000/60/60%24) + "時間"
-      }
-    ));
+  const updateTasks = (id) => {
+    setSelectListId(id);
+    axios
+      .get(`${url}/lists/${id}/tasks`, {
+        headers: {
+          authorization: `Bearer ${cookies.token}`,
+        },
+      })
+      .then((res) => {
+        setTasks(res.data.tasks);
+      })
+      .catch((err) => {
+        setErrorMessage(`タスクの取得に失敗しました。${err}`);
+      });
   }
 
   useEffect(() => {
@@ -44,39 +58,21 @@ export const Home = () => {
   useEffect(() => {
     const listId = lists[0]?.id;
     if (typeof listId !== "undefined") {
-      setSelectListId(listId);
-      axios
-        .get(`${url}/lists/${listId}/tasks`, {
-          headers: {
-            authorization: `Bearer ${cookies.token}`,
-          },
-        })
-        .then((res) => {
-          const list = addRemain(res.data);
-          setTasks(list);
-        })
-        .catch((err) => {
-          setErrorMessage(`タスクの取得に失敗しました。${err}`);
-        });
+      updateTasks(listId);
     }
   }, [lists]);
 
   const handleSelectList = (id) => {
-    setSelectListId(id);
-    axios
-      .get(`${url}/lists/${id}/tasks`, {
-        headers: {
-          authorization: `Bearer ${cookies.token}`,
-        },
-      })
-      .then((res) => {
-        const list = addRemain(res.data);
-        setTasks(list);
-      })
-      .catch((err) => {
-        setErrorMessage(`タスクの取得に失敗しました。${err}`);
-      });
+    updateTasks(id);
   };
+
+  const handleKeyDown = (e, id) => {
+    const key = e.code;
+    if (key === 'Enter' || key === 'Space'){
+      updateTasks(id);
+    }
+  };
+
   return (
     <div>
       <Header />
@@ -96,14 +92,19 @@ export const Home = () => {
               </p>
             </div>
           </div>
-          <ul className="list-tab">
+          <ul className="list-tab" role="tablist">
             {lists.map((list, key) => {
               const isActive = list.id === selectListId;
               return (
                 <li
                   key={key}
+                  aria-controls={`tab` + key}
+                  role="tab"
+                  aria-selected={`${isActive ? "true" : "false"}`}
+                  tabIndex={`${isActive ? "-1" : "0"}`}
                   className={`list-tab-item ${isActive ? "active" : ""}`}
                   onClick={() => handleSelectList(list.id)}
+                  onKeyDown={(e) => handleKeyDown(e, list.id)}
                 >
                   {list.title}
                 </li>
@@ -180,7 +181,7 @@ const Tasks = (props) => {
               <br />
               {task.done ? "完了" : "未完了"}　
               期限：{task.limit}　
-              残り：{task.remain}
+              残り：<Remain limit={task.limit} />
             </Link>
           </li>
         ))}
